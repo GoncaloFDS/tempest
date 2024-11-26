@@ -1,31 +1,29 @@
 ﻿#pragma once
 
-#include "vk_types.h"
+struct DescriptorLayoutBuilder
+{
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
 
-struct DescriptorLayoutBuilder {
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-
-    DescriptorLayoutBuilder &AddBinding(uint32_t binding, VkDescriptorType type);
+    DescriptorLayoutBuilder &AddBinding(uint32_t binding, vk::DescriptorType type);
     void Clear();
 
-    VkDescriptorSetLayout Build(VkDevice device,
-        VkShaderStageFlags shaderStages,
-        VkDescriptorSetLayoutCreateFlags flags = 0,
-        void *pNext = nullptr);
+    vk::DescriptorSetLayout Build(vk::Device device, vk::ShaderStageFlags shaderStages,
+                                  vk::DescriptorSetLayoutCreateFlags flags = {}, void *pNext = nullptr);
 };
 
-struct DescriptorAllocator {
-
-    struct PoolSizeRatio {
-        VkDescriptorType descriptorType;
+struct DescriptorAllocator
+{
+    struct PoolSizeRatio
+    {
+        vk::DescriptorType descriptorType;
         float ratio;
     };
 
-    VkDescriptorPool descriptorPool;
+    vk::DescriptorPool descriptorPool;
 
-    void InitPool(VkDevice device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios);
-    void ClearDescriptors(VkDevice device) const;
-    void DestroyPool(VkDevice device) const;
+    void InitPool(vk::Device device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios);
+    void ClearDescriptors(vk::Device device) const;
+    void DestroyPool(vk::Device device) const;
 
-    VkDescriptorSet Allocate(VkDevice device, VkDescriptorSetLayout descriptorSetLayout) const;
+    vk::DescriptorSet Allocate(vk::Device device, vk::DescriptorSetLayout descriptorSetLayout) const;
 };

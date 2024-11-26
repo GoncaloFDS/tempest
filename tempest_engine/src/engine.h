@@ -1,38 +1,54 @@
 #pragma once
 
+#include "rendering/vulkan/vk_descriptors.h"
+#include "rendering/vulkan/vk_types.h"
+#include "slang/slang-com-ptr.h"
+#include "slang/slang.h"
 #include <deque>
 #include <functional>
-#include <vulkan/vulkan.hpp>
+#include <ranges>
+#include <vk_mem_alloc.h>
 
-struct DeletionQueue {
+namespace slang
+{
+struct IGlobalSession;
+}
+
+struct DeletionQueue
+{
     std::deque<std::function<void()>> deletors;
 
-    void PushFunction(std::function<void()>&& function) {
+    void PushFunction(std::function<void()> &&function)
+    {
         deletors.push_back(function);
     }
 
-    void Flush() {
-        for (auto it = deletors.rbegin(); it!= deletors.rend(); it++) {
-            (*it)();
+    void Flush()
+    {
+        for (auto &deletor : std::ranges::reverse_view(deletors))
+        {
+            deletor();
         }
         deletors.clear();
     }
 };
 
-struct FrameData {
-    VkCommandPool commandPool;
-    VkCommandBuffer mainCommandBuffer;
-    VkSemaphore swapchainSemaphore;
-    VkSemaphore renderSemaphore;
-    VkFence renderFence;
+struct FrameData
+{
+    vk::CommandPool commandPool;
+    vk::CommandBuffer mainCommandBuffer;
+    vk::Semaphore swapchainSemaphore;
+    vk::Semaphore renderSemaphore;
+    vk::Fence renderFence;
     DeletionQueue deletionQueue;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 
-class Engine {
-public:
-    static Engine& Get();
+class Engine
+{
+  public:
+    static Engine &Get();
 
     void Init();
 
@@ -42,13 +58,13 @@ public:
 
     void Run();
 
-private:
+  private:
     bool _isInitialized = false;
     int _frameNumber = 0;
     bool _shouldStopRendering = false;
     vk::Extent2D _windowExtent = {1700, 900};
 
-    struct GLFWwindow* _window = nullptr;
+    struct GLFWwindow *_window = nullptr;
 
     vk::Instance _instance = nullptr;
     vk::DebugUtilsMessengerEXT _debugMessenger = nullptr;
@@ -69,20 +85,20 @@ private:
 
     DeletionQueue _deletionQueue;
 
-    // VmaAllocator _allocator = nullptr;
-    //
-    // AllocatedImage _drawImage = {};
-    // vk::Extent2D _drawExtent = {};
-    //
-    // DescriptorAllocator _globalDescriptorAllocator = {};
-    // vk::DescriptorSet _drawImageDescriptorSet = nullptr;
-    // vk::DescriptorSetLayout _drawImageDescriptorSetLayout = nullptr;
-    //
-    // vk::Pipeline _gradientPipeline = nullptr;
-    // vk::PipelineLayout _gradientPipelineLayout = nullptr;
-    //
-    // Slang::ComPtr<slang::IGlobalSession> _slangGlobalSession;
-    // Slang::ComPtr<slang::ISession> _slangSession;
+    VmaAllocator _allocator = nullptr;
+
+    AllocatedImage _drawImage = {};
+    vk::Extent2D _drawExtent = {};
+
+    DescriptorAllocator _globalDescriptorAllocator = {};
+    vk::DescriptorSet _drawImageDescriptorSet = nullptr;
+    vk::DescriptorSetLayout _drawImageDescriptorSetLayout = nullptr;
+
+    vk::Pipeline _gradientPipeline = nullptr;
+    vk::PipelineLayout _gradientPipelineLayout = nullptr;
+
+    Slang::ComPtr<slang::IGlobalSession> _slangGlobalSession;
+    Slang::ComPtr<slang::ISession> _slangSession;
 
     void InitWindow();
     void InitVulkan();
@@ -97,7 +113,10 @@ private:
     void CreateSwapchain(uint32_t width, uint32_t height);
     void DestroySwapchain();
 
-    FrameData& GetCurrentFrame() { return _frames[_frameNumber % FRAME_OVERLAP]; }
+    FrameData &GetCurrentFrame()
+    {
+        return _frames[_frameNumber % FRAME_OVERLAP];
+    }
 
     void DrawBackground(vk::CommandBuffer cmd);
 };

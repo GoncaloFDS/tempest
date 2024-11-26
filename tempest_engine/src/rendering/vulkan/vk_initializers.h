@@ -2,65 +2,57 @@
 
 #include "vk_types.h"
 
-namespace vkutils {
+namespace vkutils
+{
 
-VkCommandPoolCreateInfo CommanPollCreateInfo(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);
+vk::CommandPoolCreateInfo CommanPollCreateInfo(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flags = {});
 
-VkCommandBufferAllocateInfo CommandBufferAllocateInfo(VkCommandPool pool, uint32_t count = 1);
+vk::CommandBufferAllocateInfo CommandBufferAllocateInfo(vk::CommandPool pool, uint32_t count = 1);
 
+vk::CommandBufferBeginInfo CommandBufferBeginInfo(vk::CommandBufferUsageFlags flags = {});
 
-VkCommandBufferBeginInfo CommandBufferBeginInfo(VkCommandBufferUsageFlags flags = 0);
+vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(vk::CommandBuffer cmd);
 
-VkCommandBufferSubmitInfo CommandBufferSubmitInfo(VkCommandBuffer cmd);
+vk::FenceCreateInfo FenceCreateInfo(vk::FenceCreateFlags flags = {});
 
-VkFenceCreateInfo FenceCreateInfo(VkFenceCreateFlags flags = 0);
+vk::SemaphoreCreateInfo SemaphoreCreateInfo(vk::SemaphoreCreateFlags flags = {});
 
-VkSemaphoreCreateInfo SemaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0);
+vk::SubmitInfo2 SubmitInfo(vk::CommandBufferSubmitInfo *cmd, vk::SemaphoreSubmitInfo *signalSemaphoreInfo,
+                           vk::SemaphoreSubmitInfo *waitSemaphoreInfo);
 
-VkSubmitInfo2 SubmitInfo(VkCommandBufferSubmitInfo *cmd,
-    VkSemaphoreSubmitInfo *signalSemaphoreInfo,
-    VkSemaphoreSubmitInfo *waitSemaphoreInfo);
+vk::PresentInfoKHR PresentInfo();
 
-VkPresentInfoKHR PresentInfo();
+vk::RenderingAttachmentInfo AttachmentInfo(vk::ImageView view, vk::ClearValue *clear,
+                                           vk::ImageLayout layout /*= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL*/);
 
-VkRenderingAttachmentInfo AttachmentInfo(VkImageView view,
-    VkClearValue *clear,
-    VkImageLayout layout /*= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL*/);
+vk::RenderingAttachmentInfo DepthAttachmentInfo(vk::ImageView view,
+                                                vk::ImageLayout layout /*= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL*/);
 
-VkRenderingAttachmentInfo DepthAttachmentInfo(VkImageView view,
-    VkImageLayout layout /*= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL*/);
+vk::RenderingInfo RenderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo *colorAttachment,
+                                vk::RenderingAttachmentInfo *depthAttachment);
 
-VkRenderingInfo RenderingInfo(VkExtent2D renderExtent,
-    VkRenderingAttachmentInfo *colorAttachment,
-    VkRenderingAttachmentInfo *depthAttachment);
+vk::ImageSubresourceRange ImageSubresourceRange(vk::ImageAspectFlags aspectMask);
 
-VkImageSubresourceRange ImageSubresourceRange(VkImageAspectFlags aspectMask);
+vk::SemaphoreSubmitInfo SemaphoreSubmitInfo(vk::PipelineStageFlags2 stageMask, vk::Semaphore semaphore);
 
-VkSemaphoreSubmitInfo SemaphoreSubmitInfo(VkPipelineStageFlags2 stageMask, VkSemaphore semaphore);
+vk::DescriptorSetLayoutBinding DescriptorsetLayoutBinding(vk::DescriptorType type, vk::ShaderStageFlags stageFlags,
+                                                          uint32_t binding);
 
-VkDescriptorSetLayoutBinding DescriptorsetLayoutBinding(VkDescriptorType type,
-    VkShaderStageFlags stageFlags,
-    uint32_t binding);
+vk::DescriptorSetLayoutCreateInfo DescriptorsetLayoutCreateInfo(vk::DescriptorSetLayoutBinding *bindings,
+                                                                uint32_t bindingCount);
 
-VkDescriptorSetLayoutCreateInfo DescriptorsetLayoutCreateInfo(VkDescriptorSetLayoutBinding *bindings,
-    uint32_t bindingCount);
+vk::WriteDescriptorSet WriteDescriptorImage(vk::DescriptorType type, vk::DescriptorSet dstSet,
+                                            vk::DescriptorImageInfo *imageInfo, uint32_t binding);
 
-VkWriteDescriptorSet WriteDescriptorImage(VkDescriptorType type,
-    VkDescriptorSet dstSet,
-    VkDescriptorImageInfo *imageInfo,
-    uint32_t binding);
+vk::WriteDescriptorSet WriteDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet,
+                                             vk::DescriptorBufferInfo *bufferInfo, uint32_t binding);
 
-VkWriteDescriptorSet WriteDescriptorBuffer(VkDescriptorType type,
-    VkDescriptorSet dstSet,
-    VkDescriptorBufferInfo *bufferInfo,
-    uint32_t binding);
+vk::DescriptorBufferInfo BufferInfo(vk::Buffer buffer, vk::DeviceSize offset, vk::DeviceSize range);
 
-VkDescriptorBufferInfo BufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
-
-VkImageCreateInfo ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
-VkImageViewCreateInfo ImageviewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
-VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo();
-VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
-    VkShaderModule shaderModule,
-    const char *entry = "main");
-}
+vk::ImageCreateInfo ImageCreateInfo(vk::Format format, vk::ImageUsageFlags usageFlags, vk::Extent3D extent);
+vk::ImageViewCreateInfo ImageviewCreateInfo(vk::Format format, vk::Image image, vk::ImageAspectFlags aspectFlags);
+vk::PipelineLayoutCreateInfo PipelineLayoutCreateInfo();
+vk::PipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(vk::ShaderStageFlagBits stage,
+                                                                vk::ShaderModule shaderModule,
+                                                                const char *entry = "main");
+} // namespace vkutils

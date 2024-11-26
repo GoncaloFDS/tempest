@@ -31,22 +31,23 @@ find_package(Vulkan REQUIRED)
 target_link_libraries(tempest_engine PUBLIC Vulkan::Vulkan)
 
 add_subdirectory(third_party/flecs)
-target_link_libraries(tempest_engine PRIVATE flecs)
+target_link_libraries(tempest_engine PUBLIC flecs)
 
 add_subdirectory(third_party/glfw)
-target_link_libraries(tempest_engine PRIVATE glfw)
+target_link_libraries(tempest_engine PUBLIC glfw)
 
 add_subdirectory(third_party/glm)
-target_link_libraries(tempest_engine PRIVATE glm::glm)
+target_link_libraries(tempest_engine PUBLIC glm::glm)
 
 add_subdirectory(third_party/spdlog)
 target_link_libraries(tempest_engine PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 target_include_directories(tempest_engine PUBLIC third_party/spdlog/include)
 
 add_subdirectory(third_party/vk-bootstrap)
-target_link_libraries(tempest_engine PRIVATE vk-bootstrap::vk-bootstrap)
+target_link_libraries(tempest_engine PUBLIC vk-bootstrap::vk-bootstrap)
 
 add_subdirectory(third_party/vma)
-target_link_libraries(tempest_engine PRIVATE GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(tempest_engine PUBLIC GPUOpen::VulkanMemoryAllocator)
+target_include_directories(tempest_engine PUBLIC third_party/vma/include)
 
 

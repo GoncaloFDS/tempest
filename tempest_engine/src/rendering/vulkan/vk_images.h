@@ -1,12 +1,11 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
+namespace vkutils
+{
 
-namespace vkutils {
+void TransitionImage(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout currentLayout, vk::ImageLayout newLayout);
 
-void TransitionImage(VkCommandBuffer cmd, VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout);
+void CopyImageToImage(vk::CommandBuffer cmd, vk::Image source, vk::Image destination, vk::Extent2D srcSize, vk::Extent2D dstSize);
 
-void CopyImageToImage(VkCommandBuffer cmd, VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize);
-
-};
+}; // namespace vkutils

@@ -1,19 +1,20 @@
 ﻿#include "vk_pipelines.h"
 
-std::optional<VkShaderModule> vkutils::LoadShaderModule(
-    const char *shaderFileName,
-    vk::Device device,
-    Slang::ComPtr<slang::ISession> slangSession) {
+std::optional<VkShaderModule> vkutils::LoadShaderModule(const char *shaderFileName, vk::Device device,
+                                                        Slang::ComPtr<slang::ISession> slangSession)
+{
 
     slang::IModule *slangModule;
     {
         Slang::ComPtr<slang::IBlob> sourceBlob;
         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
         slangModule = slangSession->loadModule(shaderFileName, diagnosticsBlob.writeRef());
-        if (diagnosticsBlob) {
+        if (diagnosticsBlob)
+        {
             spdlog::error("shader diagnostic: {}", static_cast<const char *>(diagnosticsBlob->getBufferPointer()));
         }
-        if (!slangModule) {
+        if (!slangModule)
+        {
             spdlog::error("shader failed to load");
             return {};
         }
@@ -22,19 +23,15 @@ std::optional<VkShaderModule> vkutils::LoadShaderModule(
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
     slangModule->findEntryPointByName("computeMain", entryPoint.writeRef());
 
-
-    std::vector<slang::IComponentType *> componentTypes = { slangModule, entryPoint };
-
+    std::vector<slang::IComponentType *> componentTypes = {slangModule, entryPoint};
 
     Slang::ComPtr<slang::IComponentType> composedProgram;
     {
         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
         SlangResult result = slangSession->createCompositeComponentType(
-            componentTypes.data(),
-            componentTypes.size(),
-            composedProgram.writeRef(),
-            diagnosticsBlob.writeRef());
-        if (diagnosticsBlob) {
+            componentTypes.data(), componentTypes.size(), composedProgram.writeRef(), diagnosticsBlob.writeRef());
+        if (diagnosticsBlob)
+        {
             spdlog::error("shader diagnostic: {}", static_cast<const char *>(diagnosticsBlob->getBufferPointer()));
             return {};
         }
@@ -43,7 +40,8 @@ std::optional<VkShaderModule> vkutils::LoadShaderModule(
     {
         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
         SlangResult result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef(), diagnosticsBlob.writeRef());
-        if (diagnosticsBlob) {
+        if (diagnosticsBlob)
+        {
             spdlog::error("shader diagnostic: {}", static_cast<const char *>(diagnosticsBlob->getBufferPointer()));
             return {};
         }
@@ -56,5 +54,5 @@ std::optional<VkShaderModule> vkutils::LoadShaderModule(
     vk::ShaderModule shaderModule;
     vk::Result R = device.createShaderModule(&shaderModuleCreateInfo, nullptr, &shaderModule);
 
-    return { shaderModule };
+    return {shaderModule};
 }
