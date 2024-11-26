@@ -1,0 +1,18 @@
+[submodule "tempest_engine/third_party/glfw"]
+	path = tempest_engine/third_party/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "tempest_engine/third_party/spdlog"]
+	path = tempest_engine/third_party/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "tempest_engine/third_party/vk-bootstrap"]
+	path = tempest_engine/third_party/vk-bootstrap
+	url = https://github.com/charles-lunarg/vk-bootstrap.git
+[submodule "tempest_engine/third_party/flecs"]
+	path = tempest_engine/third_party/flecs
+	url = https://github.com/SanderMertens/flecs.git
+[submodule "tempest_engine/third_party/glm"]
+	path = tempest_engine/third_party/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "tempest_engine/third_party/vma"]
+	path = tempest_engine/third_party/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
