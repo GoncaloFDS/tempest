@@ -14,5 +14,8 @@
 	path = tempest_engine/third_party/glm
 	url = https://github.com/g-truc/glm.git
 [submodule "tempest_engine/third_party/vma"]
-	path = tempest_engine/third_party/vma
-	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    path = tempest_engine/third_party/vma
+    url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "tempest_engine/third_party/vma-hpp"]
+	path = tempest_engine/third_party/vma-hpp
+	url = https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git

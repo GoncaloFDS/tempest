@@ -4,15 +4,23 @@
 #include "rendering/vulkan/vk_types.h"
 #include "slang/slang-com-ptr.h"
 #include "slang/slang.h"
-#include <deque>
-#include <functional>
-#include <ranges>
-#include <vk_mem_alloc.h>
+
+#include "vk_mem_alloc.hpp"
 
 namespace slang
 {
 struct IGlobalSession;
 }
+
+struct AllocatedImage
+{
+    vk::Image image;
+    vk::ImageView imageView;
+    vma::Allocation allocation;
+    vma::AllocationInfo allocationInfo;
+    vk::Extent3D imageExtent;
+    vk::Format imageFormat;
+};
 
 struct DeletionQueue
 {
@@ -85,7 +93,7 @@ class Engine
 
     DeletionQueue _deletionQueue;
 
-    VmaAllocator _allocator = nullptr;
+    vma::Allocator _allocator = nullptr;
 
     AllocatedImage _drawImage = {};
     vk::Extent2D _drawExtent = {};

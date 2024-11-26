@@ -30,6 +30,8 @@ target_include_directories(tempest_engine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(Vulkan REQUIRED)
 target_link_libraries(tempest_engine PUBLIC Vulkan::Vulkan)
 
+target_link_libraries(tempest_engine PUBLIC "${Vulkan_LIBRARY}/../slang.lib")
+
 add_subdirectory(third_party/flecs)
 target_link_libraries(tempest_engine PUBLIC flecs)
 
@@ -41,13 +43,12 @@ target_link_libraries(tempest_engine PUBLIC glm::glm)
 
 add_subdirectory(third_party/spdlog)
 target_link_libraries(tempest_engine PUBLIC spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
-target_include_directories(tempest_engine PUBLIC third_party/spdlog/include)
 
 add_subdirectory(third_party/vk-bootstrap)
 target_link_libraries(tempest_engine PUBLIC vk-bootstrap::vk-bootstrap)
 
-add_subdirectory(third_party/vma)
+add_subdirectory(third_party/vma-hpp/VulkanMemoryAllocator)
 target_link_libraries(tempest_engine PUBLIC GPUOpen::VulkanMemoryAllocator)
-target_include_directories(tempest_engine PUBLIC third_party/vma/include)
 
-
+add_subdirectory(third_party/vma-hpp)
+target_link_libraries(tempest_engine PUBLIC VulkanMemoryAllocator-Hpp)

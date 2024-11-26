@@ -7,6 +7,7 @@ int main() {
 
     engine.Init();
     engine.Run();
+    engine.Draw();
 
     spdlog::info("Hello, World");
 }

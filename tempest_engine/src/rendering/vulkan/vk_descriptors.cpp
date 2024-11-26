@@ -33,7 +33,7 @@ vk::DescriptorSetLayout DescriptorLayoutBuilder::Build(vk::Device device, vk::Sh
     descriptorSetLayoutCreateInfo.flags = flags;
 
     vk::DescriptorSetLayout descriptorSetLayout;
-    device.createDescriptorSetLayout(&descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
+    auto R = device.createDescriptorSetLayout(&descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
 
     return descriptorSetLayout;
 }
@@ -52,7 +52,7 @@ void DescriptorAllocator::InitPool(vk::Device device, uint32_t maxSets, std::spa
     descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizeRatios.size());
     descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
 
-    device.createDescriptorPool(&descriptorPoolCreateInfo, nullptr, &descriptorPool);
+    auto R = device.createDescriptorPool(&descriptorPoolCreateInfo, nullptr, &descriptorPool);
 }
 
 void DescriptorAllocator::ClearDescriptors(vk::Device device) const
@@ -74,7 +74,7 @@ vk::DescriptorSet DescriptorAllocator::Allocate(vk::Device device, vk::Descripto
     descriptorSetAllocateInfo.pSetLayouts = &descriptorSetLayout;
 
     vk::DescriptorSet descriptorSet;
-    device.allocateDescriptorSets(&descriptorSetAllocateInfo, &descriptorSet);
+    auto R = device.allocateDescriptorSets(&descriptorSetAllocateInfo, &descriptorSet);
 
     return descriptorSet;
 }
