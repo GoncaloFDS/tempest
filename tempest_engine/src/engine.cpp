@@ -45,6 +45,35 @@ void Engine::Init()
 
 void Engine::Cleanup()
 {
+    if (!_isInitialized)
+    {
+        return;
+    }
+
+    _device.waitIdle();
+
+    for (FrameData &frame : _frames)
+    {
+        _device.destroyCommandPool(frame.commandPool);
+        _device.destroyFence(frame.renderFence);
+        _device.destroySemaphore(frame.renderSemaphore);
+        _device.destroySemaphore(frame.swapchainSemaphore);
+        frame.deletionQueue.Flush();
+    }
+
+    _deletionQueue.Flush();
+
+    DestroySwapchain();
+    _instance.destroySurfaceKHR(_surface);
+    _device.destroy();
+
+    vkb::destroy_debug_utils_messenger(_instance, _debugMessenger);
+    _instance.destroy();
+
+    glfwDestroyWindow(_window);
+    glfwTerminate();
+
+    LOADED_ENGINE = nullptr;
 }
 
 void Engine::Draw()
@@ -52,12 +81,13 @@ void Engine::Draw()
     auto &currentFrame = GetCurrentFrame();
 
     // wait until gpu has finished rendering last frame
-    _device.waitForFences({currentFrame.renderFence}, true, 1000000000);
+    VK_CHECK(_device.waitForFences({currentFrame.renderFence}, true, 1000000000));
     currentFrame.deletionQueue.Flush();
     _device.resetFences({currentFrame.renderFence});
 
     uint32_t swapchainImageIndex;
-    _device.acquireNextImageKHR(_swapchain, 1000000000, currentFrame.swapchainSemaphore, nullptr, &swapchainImageIndex);
+    VK_CHECK(_device.acquireNextImageKHR(_swapchain, 1000000000, currentFrame.swapchainSemaphore, nullptr,
+                                         &swapchainImageIndex));
 
     const vk::CommandBuffer cmd = currentFrame.mainCommandBuffer;
     cmd.reset();
@@ -98,7 +128,7 @@ void Engine::Draw()
     presentInfo.setSwapchains(_swapchain);
     presentInfo.setWaitSemaphores(currentFrame.renderSemaphore);
     presentInfo.setImageIndices(swapchainImageIndex);
-    _graphicsQueue.presentKHR(presentInfo);
+    VK_CHECK(_graphicsQueue.presentKHR(presentInfo));
 
     _frameNumber++;
 }
@@ -183,7 +213,7 @@ void Engine::InitVulkan()
     vmaAllocatorCreateInfo.device = _device;
     vmaAllocatorCreateInfo.instance = _instance;
     vmaAllocatorCreateInfo.flags = vma::AllocatorCreateFlagBits::eBufferDeviceAddress;
-    createAllocator(&vmaAllocatorCreateInfo, &_allocator);
+    VK_CHECK(createAllocator(&vmaAllocatorCreateInfo, &_allocator));
 
     _deletionQueue.PushFunction([&]() {
         spdlog::info("Deleting allocator");
@@ -210,13 +240,13 @@ void Engine::InitSwapchain()
     renderImageAllocInfo.usage = vma::MemoryUsage::eGpuOnly;
     renderImageAllocInfo.requiredFlags = {vk::MemoryPropertyFlagBits::eDeviceLocal};
 
-    _allocator.createImage(&renderImageInfo, &renderImageAllocInfo, &_drawImage.image, &_drawImage.allocation,
-                           &_drawImage.allocationInfo);
+    VK_CHECK(_allocator.createImage(&renderImageInfo, &renderImageAllocInfo, &_drawImage.image, &_drawImage.allocation,
+                                    &_drawImage.allocationInfo));
 
     vk::ImageViewCreateInfo renderImageViewCreateInfo =
         vkutils::ImageviewCreateInfo(_drawImage.imageFormat, _drawImage.image, vk::ImageAspectFlagBits::eColor);
 
-    _device.createImageView(&renderImageViewCreateInfo, nullptr, &_drawImage.imageView);
+    VK_CHECK(_device.createImageView(&renderImageViewCreateInfo, nullptr, &_drawImage.imageView));
 
     _deletionQueue.PushFunction([&]() {
         spdlog::info("Deleting image");
@@ -232,9 +262,9 @@ void Engine::InitCommands()
 
     for (auto &frame : _frames)
     {
-        _device.createCommandPool(&commandPoolCreateInfo, nullptr, &frame.commandPool);
+        VK_CHECK(_device.createCommandPool(&commandPoolCreateInfo, nullptr, &frame.commandPool));
         vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vkutils::CommandBufferAllocateInfo(frame.commandPool);
-        _device.allocateCommandBuffers(&commandBufferAllocateInfo, &frame.mainCommandBuffer);
+        VK_CHECK(_device.allocateCommandBuffers(&commandBufferAllocateInfo, &frame.mainCommandBuffer));
     }
 }
 
@@ -244,9 +274,9 @@ void Engine::InitSyncStructures()
     vk::SemaphoreCreateInfo semaphoreCreateInfo = {};
     for (auto &frame : _frames)
     {
-        _device.createFence(&fenceCreateInfo, nullptr, &frame.renderFence);
-        _device.createSemaphore(&semaphoreCreateInfo, nullptr, &frame.swapchainSemaphore);
-        _device.createSemaphore(&semaphoreCreateInfo, nullptr, &frame.renderSemaphore);
+        VK_CHECK(_device.createFence(&fenceCreateInfo, nullptr, &frame.renderFence));
+        VK_CHECK(_device.createSemaphore(&semaphoreCreateInfo, nullptr, &frame.swapchainSemaphore));
+        VK_CHECK(_device.createSemaphore(&semaphoreCreateInfo, nullptr, &frame.renderSemaphore));
     }
 }
 
@@ -280,7 +310,7 @@ void Engine::InitDescriptors()
 
     _deletionQueue.PushFunction([&]() {
         _globalDescriptorAllocator.DestroyPool(_device);
-        _device.destroyDescriptorSetLayout(_drawImageDescriptorSetLayout, nullptr);
+        _device.destroyDescriptorSetLayout(_drawImageDescriptorSetLayout);
     });
 }
 
@@ -328,7 +358,7 @@ void Engine::InitBackgroundPipelines()
     computeLayout.pSetLayouts = &_drawImageDescriptorSetLayout;
     computeLayout.setLayoutCount = 1;
 
-    _device.createPipelineLayout(&computeLayout, nullptr, &_gradientPipelineLayout);
+    VK_CHECK(_device.createPipelineLayout(&computeLayout, nullptr, &_gradientPipelineLayout));
 
     auto computeDrawShader = vkutils::LoadShaderModule("gradient.slang", _device, _slangSession);
     if (!computeDrawShader.has_value())

@@ -11,19 +11,18 @@
 #include <vector>
 
 #include "spdlog/spdlog.h"
+#include "vulkan/vk_enum_string_helper.h"
 #include "vulkan/vulkan.hpp"
 
 #include "glm/mat4x4.hpp"
 #include "glm/vec4.hpp"
 
-
 #define VK_CHECK(x)                                                                                                    \
-    do                                                                                                                 \
     {                                                                                                                  \
-        VkResult err = x;                                                                                              \
-        if (err)                                                                                                       \
+        vk::Result err = x;                                                                                            \
+        if (err != vk::Result::eSuccess)                                                                               \
         {                                                                                                              \
-            spdlog::error("Detected Vulkan error: {}", string_VkResult(err));                                          \
+            spdlog::error("[vulkan]: {}", vk::to_string(err));                                                         \
             abort();                                                                                                   \
         }                                                                                                              \
-    } while (0)
+    }\
