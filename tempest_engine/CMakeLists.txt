@@ -52,3 +52,17 @@ target_link_libraries(tempest_engine PUBLIC GPUOpen::VulkanMemoryAllocator)
 
 add_subdirectory(third_party/vma-hpp)
 target_link_libraries(tempest_engine PUBLIC VulkanMemoryAllocator-Hpp)
+
+add_library(imgui
+        third_party/imgui/imgui.h
+        third_party/imgui/imgui.cpp
+        third_party/imgui/imgui_demo.cpp
+        third_party/imgui/imgui_draw.cpp
+        third_party/imgui/imgui_widgets.cpp
+        third_party/imgui/imgui_tables.cpp
+        third_party/imgui/backends/imgui_impl_vulkan.cpp
+        third_party/imgui/backends/imgui_impl_glfw.cpp
+)
+target_include_directories(imgui PUBLIC third_party/imgui third_party/imgui/backends)
+target_link_libraries(imgui PRIVATE Vulkan::Vulkan glfw)
+target_link_libraries(tempest_engine PUBLIC imgui)

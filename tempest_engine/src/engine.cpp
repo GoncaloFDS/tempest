@@ -8,6 +8,9 @@
 #include "flecs.h"
 
 #include "GLFW/glfw3.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 #include "rendering/vulkan/vk_images.h"
 #include "rendering/vulkan/vk_initializers.h"
 #include "rendering/vulkan/vk_pipelines.h"
@@ -39,6 +42,8 @@ void Engine::Init()
     InitDescriptors();
     InitShaderCompiler();
     InitPipelines();
+
+    InitImgui();
 
     _isInitialized = true;
 }
@@ -109,7 +114,14 @@ void Engine::Draw()
                               _swapchainExtent);
 
     vkutils::TransitionImage(cmd, _swapchainImages[swapchainImageIndex], vk::ImageLayout::eTransferDstOptimal,
+                             vk::ImageLayout::eColorAttachmentOptimal);
+
+    DrawImgui(cmd, _swapchainImageViews[swapchainImageIndex]);
+
+    vkutils::TransitionImage(cmd, _swapchainImages[swapchainImageIndex], vk::ImageLayout::eColorAttachmentOptimal,
                              vk::ImageLayout::ePresentSrcKHR);
+
+    DrawImgui(cmd, _swapchainImageViews[swapchainImageIndex]);
 
     cmd.end();
 
@@ -140,8 +152,34 @@ void Engine::Run()
         glfwSwapBuffers(_window);
         glfwPollEvents();
 
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        ImGui::NewFrame();
+        ImGui::ShowDemoWindow();
+        ImGui::Render();
+
         Draw();
     }
+}
+void Engine::ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)> &&function)
+{
+    _device.resetFences(_immFence);
+    _immCommandBuffer.reset();
+
+    const vk::CommandBuffer cmd = _immCommandBuffer;
+
+    cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    {
+        function(cmd);
+    }
+    cmd.end();
+
+    vk::CommandBufferSubmitInfo commandBufferSubmitInfo{cmd};
+    vk::SubmitInfo2 submitInfo{};
+    submitInfo.setCommandBufferInfos(commandBufferSubmitInfo);
+    _graphicsQueue.submit2(submitInfo, _immFence);
+    VK_CHECK(_device.waitForFences(_immFence, true, 9999999999));
 }
 
 void Engine::InitWindow()
@@ -266,6 +304,11 @@ void Engine::InitCommands()
         vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vkutils::CommandBufferAllocateInfo(frame.commandPool);
         VK_CHECK(_device.allocateCommandBuffers(&commandBufferAllocateInfo, &frame.mainCommandBuffer));
     }
+
+    VK_CHECK(_device.createCommandPool(&commandPoolCreateInfo, nullptr, &_immCommandPool));
+    const vk::CommandBufferAllocateInfo commandBufferAllocateInfo{_immCommandPool, vk::CommandBufferLevel::ePrimary, 1};
+    VK_CHECK(_device.allocateCommandBuffers(&commandBufferAllocateInfo, &_immCommandBuffer));
+    _deletionQueue.PushFunction([&] { _device.destroyCommandPool(_immCommandPool); });
 }
 
 void Engine::InitSyncStructures()
@@ -278,6 +321,8 @@ void Engine::InitSyncStructures()
         VK_CHECK(_device.createSemaphore(&semaphoreCreateInfo, nullptr, &frame.swapchainSemaphore));
         VK_CHECK(_device.createSemaphore(&semaphoreCreateInfo, nullptr, &frame.renderSemaphore));
     }
+    _immFence = _device.createFence({vk::FenceCreateFlagBits::eSignaled});
+    _deletionQueue.PushFunction([&] { _device.destroyFence(_immFence); });
 }
 
 void Engine::InitDescriptors()
@@ -327,7 +372,7 @@ void Engine::InitShaderCompiler()
     targetDesc.profile = _slangGlobalSession->findProfile("spirv_1_5");
     targetDesc.flags = 0;
 
-    std::vector searchPaths = {"shaders/", "../tome_engine/shaders/"};
+    const std::vector searchPaths = {"shaders/", "../tome_engine/shaders/"};
     sessionDesc.searchPaths = searchPaths.data();
     sessionDesc.searchPathCount = static_cast<uint32_t>(searchPaths.size());
 
@@ -383,6 +428,51 @@ void Engine::InitBackgroundPipelines()
         _device.destroyPipeline(_gradientPipeline, nullptr);
     });
 }
+void Engine::InitImgui()
+{
+    vk::DescriptorPoolSize poolSizes[] = {
+        {vk::DescriptorType::eSampler, 1000},
+        {vk::DescriptorType::eCombinedImageSampler, 1000},
+        {vk::DescriptorType::eSampledImage, 1000},
+        {vk::DescriptorType::eStorageImage, 1000},
+        {vk::DescriptorType::eUniformTexelBuffer, 1000},
+        {vk::DescriptorType::eStorageTexelBuffer, 1000},
+        {vk::DescriptorType::eUniformBuffer, 1000},
+        {vk::DescriptorType::eStorageBuffer, 1000},
+        {vk::DescriptorType::eUniformBufferDynamic, 1000},
+        {vk::DescriptorType::eStorageBufferDynamic, 1000},
+        {vk::DescriptorType::eInputAttachment, 1000},
+    };
+    vk::DescriptorPoolCreateInfo poolCreateInfo{vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, poolSizes};
+
+    vk::DescriptorPool imguiPool = _device.createDescriptorPool(poolCreateInfo);
+
+    // imgui
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForVulkan(_window, true);
+    ImGui_ImplVulkan_InitInfo imguiInitInfo{};
+    imguiInitInfo.Instance = _instance;
+    imguiInitInfo.PhysicalDevice = _chosenGpu;
+    imguiInitInfo.Device = _device;
+    imguiInitInfo.Queue = _graphicsQueue;
+    imguiInitInfo.DescriptorPool = imguiPool;
+    imguiInitInfo.MinImageCount = 3;
+    imguiInitInfo.ImageCount = 3;
+    imguiInitInfo.UseDynamicRendering = true;
+
+    vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo{{}, {_swapchainImageFormat}};
+    imguiInitInfo.PipelineRenderingCreateInfo = pipelineRenderingCreateInfo;
+
+    imguiInitInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    ImGui_ImplVulkan_Init(&imguiInitInfo);
+
+    ImGui_ImplVulkan_CreateFontsTexture();
+
+    _deletionQueue.PushFunction([&] {
+        ImGui_ImplVulkan_Shutdown();
+        _device.destroyDescriptorPool(imguiPool);
+    });
+}
 
 void Engine::CreateSwapchain(uint32_t width, uint32_t height)
 {
@@ -402,11 +492,11 @@ void Engine::CreateSwapchain(uint32_t width, uint32_t height)
     _swapchain = vkbSwapchain.swapchain;
     for (VkImage_T *image : vkbSwapchain.get_images().value())
     {
-        _swapchainImages.push_back(image);
+        _swapchainImages.emplace_back(image);
     }
     for (auto imageView : vkbSwapchain.get_image_views().value())
     {
-        _swapchainImageViews.push_back(imageView);
+        _swapchainImageViews.emplace_back(imageView);
     }
 }
 
@@ -418,11 +508,26 @@ void Engine::DestroySwapchain()
         _device.destroyImageView(imageView, nullptr);
     }
 }
+FrameData &Engine::GetCurrentFrame()
+{
+    return _frames[_frameNumber % FRAME_OVERLAP];
+}
 
-void Engine::DrawBackground(vk::CommandBuffer cmd)
+void Engine::DrawBackground(const vk::CommandBuffer cmd)
 {
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, _gradientPipeline);
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, _gradientPipelineLayout, 0, _drawImageDescriptorSet,
                            nullptr);
     cmd.dispatch(std::ceil(_drawExtent.width / 16.0), std::ceil(_drawExtent.height / 16.0), 1);
+}
+
+void Engine::DrawImgui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
+{
+    vk::RenderingAttachmentInfo colorAttachmentInfo{targetImageView, vk::ImageLayout::eColorAttachmentOptimal};
+    vk::RenderingInfo renderingInfo{
+        {}, {{}, _swapchainExtent}, 1, {}, colorAttachmentInfo,
+    };
+    cmd.beginRendering(&renderingInfo);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    cmd.endRendering();
 }

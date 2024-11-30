@@ -25,4 +25,5 @@
             spdlog::error("[vulkan]: {}", vk::to_string(err));                                                         \
             abort();                                                                                                   \
         }                                                                                                              \
-    }\
+    }
+

@@ -19,3 +19,6 @@
 [submodule "tempest_engine/third_party/vma-hpp"]
 	path = tempest_engine/third_party/vma-hpp
 	url = https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git
+[submodule "tempest_engine/third_party/imgui"]
+	path = tempest_engine/third_party/imgui
+	url = https://github.com/ocornut/imgui.git

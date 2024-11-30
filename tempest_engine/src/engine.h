@@ -66,6 +66,8 @@ class Engine
 
     void Run();
 
+    void ImmediateSubmit(std::function<void(vk::CommandBuffer cmd)> &&function);
+
   private:
     bool _isInitialized = false;
     int _frameNumber = 0;
@@ -108,6 +110,11 @@ class Engine
     Slang::ComPtr<slang::IGlobalSession> _slangGlobalSession;
     Slang::ComPtr<slang::ISession> _slangSession;
 
+    // immediat submit structures
+    vk::Fence _immFence;
+    vk::CommandBuffer _immCommandBuffer;
+    vk::CommandPool _immCommandPool;
+
     void InitWindow();
     void InitVulkan();
     void InitSwapchain();
@@ -117,14 +124,13 @@ class Engine
     void InitShaderCompiler();
     void InitPipelines();
     void InitBackgroundPipelines();
+    void InitImgui();
 
     void CreateSwapchain(uint32_t width, uint32_t height);
     void DestroySwapchain();
 
-    FrameData &GetCurrentFrame()
-    {
-        return _frames[_frameNumber % FRAME_OVERLAP];
-    }
+    FrameData &GetCurrentFrame();
 
     void DrawBackground(vk::CommandBuffer cmd);
+    void DrawImgui(vk::CommandBuffer cmd, vk::ImageView targetImageView);
 };
